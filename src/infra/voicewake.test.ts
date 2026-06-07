@@ -4,6 +4,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempDir } from "../test-utils/temp-dir.js";
 import {
+  VOICEWAKE_MAX_TRIGGER_LENGTH,
+  VOICEWAKE_MAX_TRIGGERS,
   defaultVoiceWakeTriggers,
   loadVoiceWakeConfig,
   resetVoiceWakeTriggers,
@@ -69,5 +71,27 @@ describe("voicewake config", () => {
         updatedAtMs: 0,
       });
     });
+  });
+
+  it("collapses internal whitespace runs in trigger phrases", async () => {
+    await withTempDir("openclaw-voicewake-", async (baseDir) => {
+      const saved = await setVoiceWakeTriggers(["hey   claude", "open\t\tclaw"], baseDir);
+      expect(saved.triggers).toEqual(["hey claude", "open claw"]);
+    });
+  });
+
+  it("deduplicates triggers case-insensitively, keeping first occurrence", async () => {
+    await withTempDir("openclaw-voicewake-", async (baseDir) => {
+      const saved = await setVoiceWakeTriggers(
+        ["Claude", "claude", "CLAUDE", "openclaw", "OpenClaw"],
+        baseDir,
+      );
+      expect(saved.triggers).toEqual(["Claude", "openclaw"]);
+    });
+  });
+
+  it("exports enforced limit constants", () => {
+    expect(VOICEWAKE_MAX_TRIGGERS).toBeGreaterThan(0);
+    expect(VOICEWAKE_MAX_TRIGGER_LENGTH).toBeGreaterThan(0);
   });
 });

@@ -31,13 +31,14 @@ Shape:
 
 - `voicewake.get` → `{ triggers: string[] }`
 - `voicewake.set` with params `{ triggers: string[] }` → `{ triggers: string[] }`
-- `voicewake.reset` → `{ triggers: string[] }` — restores factory defaults and broadcasts to all clients
+- `voicewake.defaults` → `{ triggers: string[] }` — returns factory defaults without modifying state
 
 Notes:
 
-- Triggers are normalized (trimmed, empties dropped). Empty lists fall back to defaults.
-- Limits are enforced for safety (count/length caps).
-- Factory defaults are `["hey claude", "openclaw", "claude", "computer"]`.
+- Triggers are normalized: leading/trailing whitespace is trimmed, internal whitespace runs are collapsed, empties are dropped.
+- Duplicates are removed case-insensitively (first occurrence wins), so `["Claude", "claude"]` stores as `["Claude"]`.
+- Limits: at most 20 triggers; each trigger at most 64 characters. Exceeding either returns `INVALID_REQUEST`.
+- Empty lists after normalization fall back to factory defaults.
 
 ### Routing methods (trigger → target)
 

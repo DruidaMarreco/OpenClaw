@@ -12,15 +12,34 @@ type VoiceWakeConfig = {
 
 const DEFAULT_TRIGGERS = ["hey claude", "openclaw", "claude", "computer"];
 
+// Hard limits enforced at both storage and RPC validation layers.
+export const VOICEWAKE_MAX_TRIGGERS = 20;
+export const VOICEWAKE_MAX_TRIGGER_LENGTH = 64;
+
 function resolvePath(baseDir?: string) {
   const root = baseDir ?? resolveStateDir();
   return path.join(root, "settings", "voicewake.json");
 }
 
+/** Collapse internal whitespace runs so "hey  claude" stores as "hey claude". */
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ");
+}
+
 function sanitizeTriggers(triggers: string[] | undefined | null): string[] {
-  const cleaned = (triggers ?? [])
-    .map((w) => normalizeOptionalString(w) ?? "")
-    .filter((w) => w.length > 0);
+  const seen = new Set<string>();
+  const cleaned: string[] = [];
+  for (const raw of triggers ?? []) {
+    const normalized = normalizeOptionalString(raw);
+    if (!normalized) continue;
+    const withNormalizedSpaces = normalizeWhitespace(normalized);
+    if (!withNormalizedSpaces) continue;
+    // Deduplicate case-insensitively: first occurrence wins.
+    const key = withNormalizedSpaces.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cleaned.push(withNormalizedSpaces);
+  }
   return cleaned.length > 0 ? cleaned : DEFAULT_TRIGGERS;
 }
 

@@ -1,11 +1,14 @@
 // Gateway RPC handlers for voice wake phrase configuration.
 import { ErrorCodes, errorShape } from "../../../packages/gateway-protocol/src/index.js";
 import {
+  defaultVoiceWakeTriggers,
   loadVoiceWakeConfig,
-  resetVoiceWakeTriggers,
   setVoiceWakeTriggers,
 } from "../../infra/voicewake.js";
-import { normalizeVoiceWakeTriggers } from "../server-utils.js";
+import {
+  normalizeVoiceWakeTriggers,
+  validateVoiceWakeTriggerInput,
+} from "../server-utils.js";
 import { formatForLog } from "../ws-log.js";
 import type { GatewayRequestHandlers } from "./types.js";
 
@@ -28,6 +31,11 @@ export const voicewakeHandlers: GatewayRequestHandlers = {
       );
       return;
     }
+    const validation = validateVoiceWakeTriggerInput(params.triggers);
+    if (!validation.ok) {
+      respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, validation.message));
+      return;
+    }
     try {
       const triggers = normalizeVoiceWakeTriggers(params.triggers);
       // Persist the normalized trigger list before broadcasting so connected
@@ -39,13 +47,7 @@ export const voicewakeHandlers: GatewayRequestHandlers = {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
     }
   },
-  "voicewake.reset": async ({ respond, context }) => {
-    try {
-      const cfg = await resetVoiceWakeTriggers();
-      context.broadcastVoiceWakeChanged(cfg.triggers);
-      respond(true, { triggers: cfg.triggers });
-    } catch (err) {
-      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
-    }
+  "voicewake.defaults": async ({ respond }) => {
+    respond(true, { triggers: defaultVoiceWakeTriggers() });
   },
 };

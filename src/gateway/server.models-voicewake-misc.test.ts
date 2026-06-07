@@ -416,31 +416,45 @@ describe("gateway server models + voicewake", () => {
     });
   });
 
-  test("voicewake.reset restores defaults and broadcasts", { timeout: 20_000 }, async () => {
+  test("voicewake.defaults returns factory defaults without modifying state", async () => {
     await withTempHome(async () => {
       await rpcReq(ws, "voicewake.set", { triggers: ["custom"] });
 
-      const changedP = onceMessage(
-        ws,
-        (o) => o.type === "event" && o.event === "voicewake.changed",
-      );
+      const defaults = await rpcReq<{ triggers: string[] }>(ws, "voicewake.defaults");
+      expect(defaults.ok).toBe(true);
+      expect(defaults.payload?.triggers).toEqual(["openclaw", "claude", "computer"]);
 
-      const resetRes = await rpcReq<{ triggers: string[] }>(ws, "voicewake.reset");
-      expect(resetRes.ok).toBe(true);
-      expect(resetRes.payload?.triggers).toEqual(["hey claude", "openclaw", "claude", "computer"]);
+      // State must be unchanged — custom trigger should still be active.
+      const current = await rpcReq<{ triggers: string[] }>(ws, "voicewake.get");
+      expect(current.payload?.triggers).toEqual(["custom"]);
+    });
+  });
 
-      const changed = (await changedP) as { event?: string; payload?: unknown };
-      expect(changed.event).toBe("voicewake.changed");
-      expect((changed.payload as { triggers?: unknown } | undefined)?.triggers).toEqual([
-        "hey claude",
-        "openclaw",
-        "claude",
-        "computer",
-      ]);
+  test("voicewake.set rejects input that exceeds the trigger count limit", async () => {
+    await withTempHome(async () => {
+      const tooMany = Array.from({ length: 21 }, (_, i) => `trigger${i}`);
+      const res = await rpcReq(ws, "voicewake.set", { triggers: tooMany });
+      expect(res.ok).toBe(false);
+      expect(JSON.stringify(res)).toMatch(/at most 20/i);
+    });
+  });
 
-      const after = await rpcReq<{ triggers: string[] }>(ws, "voicewake.get");
-      expect(after.ok).toBe(true);
-      expect(after.payload?.triggers).toEqual(["hey claude", "openclaw", "claude", "computer"]);
+  test("voicewake.set rejects input where any trigger exceeds the length limit", async () => {
+    await withTempHome(async () => {
+      const longTrigger = "a".repeat(65);
+      const res = await rpcReq(ws, "voicewake.set", { triggers: [longTrigger] });
+      expect(res.ok).toBe(false);
+      expect(JSON.stringify(res)).toMatch(/at most 64/i);
+    });
+  });
+
+  test("voicewake.set deduplicates case-insensitively and collapses whitespace", async () => {
+    await withTempHome(async () => {
+      const setRes = await rpcReq<{ triggers: string[] }>(ws, "voicewake.set", {
+        triggers: ["Claude", "claude", "hey   claude"],
+      });
+      expect(setRes.ok).toBe(true);
+      expect(setRes.payload?.triggers).toEqual(["Claude", "hey claude"]);
     });
   });
 
