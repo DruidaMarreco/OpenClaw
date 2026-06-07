@@ -10,7 +10,7 @@ type VoiceWakeConfig = {
   updatedAtMs: number;
 };
 
-const DEFAULT_TRIGGERS = ["openclaw", "claude", "computer"];
+const DEFAULT_TRIGGERS = ["hey claude", "openclaw", "claude", "computer"];
 
 function resolvePath(baseDir?: string) {
   const root = baseDir ?? resolveStateDir();
@@ -62,4 +62,9 @@ export async function setVoiceWakeTriggers(
     await writeJson(filePath, next);
     return next;
   });
+}
+
+/** Reset voice wake triggers to factory defaults and persist the result. */
+export async function resetVoiceWakeTriggers(baseDir?: string): Promise<VoiceWakeConfig> {
+  return setVoiceWakeTriggers(defaultVoiceWakeTriggers(), baseDir);
 }

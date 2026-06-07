@@ -6,6 +6,7 @@ import { withTempDir } from "../test-utils/temp-dir.js";
 import {
   defaultVoiceWakeTriggers,
   loadVoiceWakeConfig,
+  resetVoiceWakeTriggers,
   setVoiceWakeTriggers,
 } from "./voicewake.js";
 
@@ -29,6 +30,22 @@ describe("voicewake config", () => {
         triggers: ["hi", "there"],
         updatedAtMs: saved.updatedAtMs,
       });
+    });
+  });
+
+  it('includes "hey claude" in the default trigger list', () => {
+    expect(defaultVoiceWakeTriggers()).toContain("hey claude");
+  });
+
+  it("reset overwrites custom triggers with defaults and updates timestamp", async () => {
+    await withTempDir("openclaw-voicewake-", async (baseDir) => {
+      await setVoiceWakeTriggers(["custom"], baseDir);
+      const reset = await resetVoiceWakeTriggers(baseDir);
+      expect(reset.triggers).toEqual(defaultVoiceWakeTriggers());
+      expect(reset.updatedAtMs).toBeGreaterThan(0);
+
+      const loaded = await loadVoiceWakeConfig(baseDir);
+      expect(loaded.triggers).toEqual(defaultVoiceWakeTriggers());
     });
   });
 

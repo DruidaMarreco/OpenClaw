@@ -1,6 +1,10 @@
 // Gateway RPC handlers for voice wake phrase configuration.
 import { ErrorCodes, errorShape } from "../../../packages/gateway-protocol/src/index.js";
-import { loadVoiceWakeConfig, setVoiceWakeTriggers } from "../../infra/voicewake.js";
+import {
+  loadVoiceWakeConfig,
+  resetVoiceWakeTriggers,
+  setVoiceWakeTriggers,
+} from "../../infra/voicewake.js";
 import { normalizeVoiceWakeTriggers } from "../server-utils.js";
 import { formatForLog } from "../ws-log.js";
 import type { GatewayRequestHandlers } from "./types.js";
@@ -29,6 +33,15 @@ export const voicewakeHandlers: GatewayRequestHandlers = {
       // Persist the normalized trigger list before broadcasting so connected
       // nodes and future gateway starts observe the same wake phrases.
       const cfg = await setVoiceWakeTriggers(triggers);
+      context.broadcastVoiceWakeChanged(cfg.triggers);
+      respond(true, { triggers: cfg.triggers });
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatForLog(err)));
+    }
+  },
+  "voicewake.reset": async ({ respond, context }) => {
+    try {
+      const cfg = await resetVoiceWakeTriggers();
       context.broadcastVoiceWakeChanged(cfg.triggers);
       respond(true, { triggers: cfg.triggers });
     } catch (err) {
