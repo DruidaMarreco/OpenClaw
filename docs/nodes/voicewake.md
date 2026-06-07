@@ -22,7 +22,7 @@ Wake words are stored on the gateway machine at:
 Shape:
 
 ```json
-{ "triggers": ["openclaw", "claude", "computer"], "updatedAtMs": 1730000000000 }
+{ "triggers": ["hey claude", "openclaw", "claude", "computer"], "updatedAtMs": 1730000000000 }
 ```
 
 ## Protocol
@@ -31,11 +31,13 @@ Shape:
 
 - `voicewake.get` → `{ triggers: string[] }`
 - `voicewake.set` with params `{ triggers: string[] }` → `{ triggers: string[] }`
+- `voicewake.reset` → `{ triggers: string[] }` — restores factory defaults and broadcasts to all clients
 
 Notes:
 
 - Triggers are normalized (trimmed, empties dropped). Empty lists fall back to defaults.
 - Limits are enforced for safety (count/length caps).
+- Factory defaults are `["hey claude", "openclaw", "claude", "computer"]`.
 
 ### Routing methods (trigger → target)
 

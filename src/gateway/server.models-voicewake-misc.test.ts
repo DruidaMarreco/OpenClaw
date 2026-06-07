@@ -355,7 +355,7 @@ describe("gateway server models + voicewake", () => {
       await withTempHome(async (homeDir) => {
         const initial = await rpcReq<{ triggers: string[] }>(ws, "voicewake.get");
         expect(initial.ok).toBe(true);
-        expect(initial.payload?.triggers).toEqual(["openclaw", "claude", "computer"]);
+        expect(initial.payload?.triggers).toEqual(["hey claude", "openclaw", "claude", "computer"]);
 
         const changedP = onceMessage(
           ws,
@@ -392,6 +392,7 @@ describe("gateway server models + voicewake", () => {
     await withConnectedNodeEvent("voicewake.changed", async (nodeWs, first) => {
       expect(first.event).toBe("voicewake.changed");
       expect((first.payload as { triggers?: unknown } | undefined)?.triggers).toEqual([
+        "hey claude",
         "openclaw",
         "claude",
         "computer",
@@ -412,6 +413,34 @@ describe("gateway server models + voicewake", () => {
         "openclaw",
         "computer",
       ]);
+    });
+  });
+
+  test("voicewake.reset restores defaults and broadcasts", { timeout: 20_000 }, async () => {
+    await withTempHome(async () => {
+      await rpcReq(ws, "voicewake.set", { triggers: ["custom"] });
+
+      const changedP = onceMessage(
+        ws,
+        (o) => o.type === "event" && o.event === "voicewake.changed",
+      );
+
+      const resetRes = await rpcReq<{ triggers: string[] }>(ws, "voicewake.reset");
+      expect(resetRes.ok).toBe(true);
+      expect(resetRes.payload?.triggers).toEqual(["hey claude", "openclaw", "claude", "computer"]);
+
+      const changed = (await changedP) as { event?: string; payload?: unknown };
+      expect(changed.event).toBe("voicewake.changed");
+      expect((changed.payload as { triggers?: unknown } | undefined)?.triggers).toEqual([
+        "hey claude",
+        "openclaw",
+        "claude",
+        "computer",
+      ]);
+
+      const after = await rpcReq<{ triggers: string[] }>(ws, "voicewake.get");
+      expect(after.ok).toBe(true);
+      expect(after.payload?.triggers).toEqual(["hey claude", "openclaw", "claude", "computer"]);
     });
   });
 
