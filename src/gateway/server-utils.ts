@@ -1,13 +1,47 @@
 // Gateway generic server utilities.
 // Normalizes voice-wake triggers and formats unknown errors for logs/responses.
 import { normalizeTrimmedStringList } from "@openclaw/normalization-core/string-normalization";
-import { defaultVoiceWakeTriggers } from "../infra/voicewake.js";
+import {
+  VOICEWAKE_MAX_TRIGGER_LENGTH,
+  VOICEWAKE_MAX_TRIGGERS,
+  defaultVoiceWakeTriggers,
+} from "../infra/voicewake.js";
+
+/**
+ * Validate raw trigger input before normalization. Returns an error message when the
+ * input would exceed enforced limits, or null when the input is acceptable.
+ */
+export function validateVoiceWakeTriggerInput(
+  input: unknown,
+): { ok: true } | { ok: false; message: string } {
+  if (!Array.isArray(input)) {
+    return { ok: false, message: "triggers must be an array" };
+  }
+  const strings = (input as unknown[]).filter(
+    (v): v is string => typeof v === "string" && v.trim().length > 0,
+  );
+  if (strings.length > VOICEWAKE_MAX_TRIGGERS) {
+    return {
+      ok: false,
+      message: `triggers must contain at most ${VOICEWAKE_MAX_TRIGGERS} entries`,
+    };
+  }
+  for (const trigger of strings) {
+    if (trigger.trim().length > VOICEWAKE_MAX_TRIGGER_LENGTH) {
+      return {
+        ok: false,
+        message: `each trigger must be at most ${VOICEWAKE_MAX_TRIGGER_LENGTH} characters`,
+      };
+    }
+  }
+  return { ok: true };
+}
 
 /** Normalizes voice-wake trigger config with bounded count/length and defaults. */
 export function normalizeVoiceWakeTriggers(input: unknown): string[] {
   const cleaned = normalizeTrimmedStringList(input)
-    .slice(0, 32)
-    .map((value) => value.slice(0, 64));
+    .slice(0, VOICEWAKE_MAX_TRIGGERS)
+    .map((value) => value.slice(0, VOICEWAKE_MAX_TRIGGER_LENGTH));
   return cleaned.length > 0 ? cleaned : defaultVoiceWakeTriggers();
 }
 
