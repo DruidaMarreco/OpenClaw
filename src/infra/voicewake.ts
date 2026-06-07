@@ -10,36 +10,17 @@ type VoiceWakeConfig = {
   updatedAtMs: number;
 };
 
-const DEFAULT_TRIGGERS = ["hey claude", "openclaw", "claude", "computer"];
-
-// Hard limits enforced at both storage and RPC validation layers.
-export const VOICEWAKE_MAX_TRIGGERS = 20;
-export const VOICEWAKE_MAX_TRIGGER_LENGTH = 64;
+const DEFAULT_TRIGGERS = ["openclaw", "claude", "computer"];
 
 function resolvePath(baseDir?: string) {
   const root = baseDir ?? resolveStateDir();
   return path.join(root, "settings", "voicewake.json");
 }
 
-/** Collapse internal whitespace runs so "hey  claude" stores as "hey claude". */
-function normalizeWhitespace(value: string): string {
-  return value.replace(/\s+/g, " ");
-}
-
 function sanitizeTriggers(triggers: string[] | undefined | null): string[] {
-  const seen = new Set<string>();
-  const cleaned: string[] = [];
-  for (const raw of triggers ?? []) {
-    const normalized = normalizeOptionalString(raw);
-    if (!normalized) continue;
-    const withNormalizedSpaces = normalizeWhitespace(normalized);
-    if (!withNormalizedSpaces) continue;
-    // Deduplicate case-insensitively: first occurrence wins.
-    const key = withNormalizedSpaces.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    cleaned.push(withNormalizedSpaces);
-  }
+  const cleaned = (triggers ?? [])
+    .map((w) => normalizeOptionalString(w) ?? "")
+    .filter((w) => w.length > 0);
   return cleaned.length > 0 ? cleaned : DEFAULT_TRIGGERS;
 }
 
@@ -48,6 +29,18 @@ const withLock = createAsyncLock();
 /** Return the built-in voice wake trigger list. */
 export function defaultVoiceWakeTriggers() {
   return [...DEFAULT_TRIGGERS];
+}
+
+/**
+ * Return true when the given trigger list exactly matches the factory defaults
+ * in the same order. Used by voicewake.status to tell clients whether the list
+ * has ever been customized.
+ */
+export function isDefaultVoiceWakeTriggers(triggers: string[]): boolean {
+  return (
+    triggers.length === DEFAULT_TRIGGERS.length &&
+    triggers.every((t, i) => t === DEFAULT_TRIGGERS[i])
+  );
 }
 
 /** Load persisted voice wake triggers, falling back to defaults. */
@@ -81,9 +74,4 @@ export async function setVoiceWakeTriggers(
     await writeJson(filePath, next);
     return next;
   });
-}
-
-/** Reset voice wake triggers to factory defaults and persist the result. */
-export async function resetVoiceWakeTriggers(baseDir?: string): Promise<VoiceWakeConfig> {
-  return setVoiceWakeTriggers(defaultVoiceWakeTriggers(), baseDir);
 }
