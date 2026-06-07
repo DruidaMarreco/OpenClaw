@@ -355,7 +355,7 @@ describe("gateway server models + voicewake", () => {
       await withTempHome(async (homeDir) => {
         const initial = await rpcReq<{ triggers: string[] }>(ws, "voicewake.get");
         expect(initial.ok).toBe(true);
-        expect(initial.payload?.triggers).toEqual(["openclaw", "claude", "computer"]);
+        expect(initial.payload?.triggers).toEqual(["hey claude", "openclaw", "claude", "computer"]);
 
         const changedP = onceMessage(
           ws,
@@ -392,6 +392,7 @@ describe("gateway server models + voicewake", () => {
     await withConnectedNodeEvent("voicewake.changed", async (nodeWs, first) => {
       expect(first.event).toBe("voicewake.changed");
       expect((first.payload as { triggers?: unknown } | undefined)?.triggers).toEqual([
+        "hey claude",
         "openclaw",
         "claude",
         "computer",
