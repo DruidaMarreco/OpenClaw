@@ -138,6 +138,7 @@ export const CORE_GATEWAY_METHOD_SPECS: readonly CoreGatewayMethodSpec[] = [
   { name: "secrets.resolve", scope: "operator.admin" },
   { name: "voicewake.routing.get", scope: "operator.read" },
   { name: "voicewake.routing.set", scope: "operator.write" },
+  { name: "voicewake.routing.reset", scope: "operator.write" },
   { name: "sessions.list", scope: "operator.read", startup: true },
   { name: "sessions.subscribe", scope: "operator.read" },
   { name: "sessions.unsubscribe", scope: "operator.read" },
