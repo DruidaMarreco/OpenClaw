@@ -1,6 +1,7 @@
 // Gateway RPC handlers for voice wake routing configuration.
 import { ErrorCodes, errorShape } from "../../../packages/gateway-protocol/src/index.js";
 import {
+  isDefaultVoiceWakeRoutingConfig,
   loadVoiceWakeRoutingConfig,
   normalizeVoiceWakeRoutingConfig,
   setVoiceWakeRoutingConfig,
@@ -13,6 +14,17 @@ export const voicewakeRoutingHandlers: GatewayRequestHandlers = {
   "voicewake.routing.get": async ({ respond }) => {
     try {
       respond(true, { config: await loadVoiceWakeRoutingConfig() });
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
+    }
+  },
+  "voicewake.routing.status": async ({ respond }) => {
+    try {
+      const config = await loadVoiceWakeRoutingConfig();
+      respond(true, {
+        config,
+        isDefault: isDefaultVoiceWakeRoutingConfig(config),
+      });
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
     }

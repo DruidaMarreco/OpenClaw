@@ -287,6 +287,18 @@ export async function setVoiceWakeRoutingConfig(
   });
 }
 
+/**
+ * Returns true when routing config matches factory defaults: no custom routes and
+ * defaultTarget routes to the current session. Used to drive "Reset to defaults" UI visibility.
+ */
+export function isDefaultVoiceWakeRoutingConfig(config: VoiceWakeRoutingConfig): boolean {
+  return (
+    config.routes.length === 0 &&
+    "mode" in config.defaultTarget &&
+    config.defaultTarget.mode === "current"
+  );
+}
+
 type VoiceWakeResolvedRoute = { mode: "current" } | { agentId: string } | { sessionKey: string };
 
 function resolveVoiceWakeRouteTarget(
