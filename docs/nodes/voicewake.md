@@ -31,6 +31,7 @@ Shape:
 
 - `voicewake.get` → `{ triggers: string[] }`
 - `voicewake.set` with params `{ triggers: string[] }` → `{ triggers: string[] }`
+- `voicewake.reset` → `{ triggers: string[] }` — clears custom triggers and restores factory defaults (`["openclaw", "claude", "computer"]`), then broadcasts `voicewake.changed`
 
 Notes:
 
@@ -40,8 +41,10 @@ Notes:
 ### Routing methods (trigger → target)
 
 - `voicewake.routing.get` → `{ config: VoiceWakeRoutingConfig }`
+- `voicewake.routing.resolve` with params `{ trigger: string }` → `{ target: VoiceWakeRouteTarget, matched: boolean }` — resolves which target a trigger phrase would route to; `matched` is true when a specific route matched, false when the `defaultTarget` was used
 - `voicewake.routing.set` with params `{ config: VoiceWakeRoutingConfig }` → `{ config: VoiceWakeRoutingConfig }`
 - `voicewake.routing.status` → `{ config: VoiceWakeRoutingConfig, isDefault: boolean }` — current routing config plus metadata; `isDefault` is true when there are no custom routes and the defaultTarget is `{ mode: "current" }`, and can be used to show or hide a "Reset to defaults" control
+- `voicewake.routing.reset` → `{ config: VoiceWakeRoutingConfig }` — clears all custom routes and restores factory defaults (`defaultTarget: { mode: "current" }`, empty routes), then broadcasts `voicewake.routing.changed`
 
 `VoiceWakeRoutingConfig` shape:
 
