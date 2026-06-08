@@ -584,6 +584,41 @@ describe("gateway server models + voicewake", () => {
     });
   });
 
+  test("voicewake.routing.resolve returns matched route or default", { timeout: 20_000 }, async () => {
+    await withTempHome(async () => {
+      await rpcReq(ws, "voicewake.routing.set", {
+        config: {
+          defaultTarget: { agentId: "main" },
+          routes: [{ trigger: "robot wake", target: { sessionKey: "agent:main:voice" } }],
+        },
+      });
+
+      const matchedRes = await rpcReq<{ target?: unknown; matched?: boolean }>(
+        ws,
+        "voicewake.routing.resolve",
+        { trigger: "Robot Wake" },
+      );
+      expect(matchedRes.ok).toBe(true);
+      expect(matchedRes.payload?.matched).toBe(true);
+      expect(matchedRes.payload?.target).toEqual({ sessionKey: "agent:main:voice" });
+
+      const defaultRes = await rpcReq<{ target?: unknown; matched?: boolean }>(
+        ws,
+        "voicewake.routing.resolve",
+        { trigger: "unknown phrase" },
+      );
+      expect(defaultRes.ok).toBe(true);
+      expect(defaultRes.payload?.matched).toBe(false);
+      expect(defaultRes.payload?.target).toEqual({ agentId: "main" });
+
+      const badParams = await rpcReq(ws, "voicewake.routing.resolve", {});
+      expect(badParams.ok).toBe(false);
+      expect(badParams.error?.message ?? "").toMatch(
+        /voicewake\.routing\.resolve requires trigger: string/i,
+      );
+    });
+  });
+
   test("voicewake.routing.status reflects default and custom states", { timeout: 30_000 }, async () => {
     await withTempHome(async () => {
       const defaultStatus = await rpcReq<{
