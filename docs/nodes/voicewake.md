@@ -31,7 +31,7 @@ Shape:
 
 - `voicewake.get` → `{ triggers: string[] }`
 - `voicewake.set` with params `{ triggers: string[] }` → `{ triggers: string[] }`
-- `voicewake.status` → `{ triggers: string[], updatedAtMs: number, isDefault: boolean }` — current triggers plus metadata; `isDefault` is true when triggers exactly match factory defaults and can be used to show or hide a "Reset to defaults" control
+- `voicewake.reset` → `{ triggers: string[] }` — clears custom triggers and restores factory defaults (`["openclaw", "claude", "computer"]`), then broadcasts `voicewake.changed`
 
 Notes:
 
