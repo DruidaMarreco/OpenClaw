@@ -8,6 +8,7 @@ import {
   normalizeVoiceWakeTriggerWord,
   resetVoiceWakeRoutingConfig,
   resolveVoiceWakeRouteByTrigger,
+  resolveVoiceWakeRouteWithMatch,
   setVoiceWakeRoutingConfig,
   validateVoiceWakeRoutingConfigInput,
 } from "./voicewake-routing.js";
@@ -134,6 +135,56 @@ describe("isDefaultVoiceWakeRoutingConfig", () => {
       routes: [],
     });
     expect(isDefaultVoiceWakeRoutingConfig(config)).toBe(false);
+  });
+});
+
+describe("resolveVoiceWakeRouteWithMatch", () => {
+  it("returns matched: true when a specific route matches", () => {
+    const config = normalizeVoiceWakeRoutingConfig({
+      defaultTarget: { mode: "current" },
+      routes: [{ trigger: "robot", target: { agentId: "main" } }],
+    });
+    expect(resolveVoiceWakeRouteWithMatch({ trigger: "robot", config })).toEqual({
+      target: { agentId: "main" },
+      matched: true,
+    });
+  });
+
+  it("returns matched: false and defaultTarget when no route matches", () => {
+    const config = normalizeVoiceWakeRoutingConfig({
+      defaultTarget: { agentId: "main" },
+      routes: [{ trigger: "robot", target: { sessionKey: "agent:main:voice" } }],
+    });
+    expect(resolveVoiceWakeRouteWithMatch({ trigger: "unknown", config })).toEqual({
+      target: { agentId: "main" },
+      matched: false,
+    });
+  });
+
+  it("matches after trigger normalization", () => {
+    const config = normalizeVoiceWakeRoutingConfig({
+      defaultTarget: { mode: "current" },
+      routes: [{ trigger: "Hey, Bot", target: { sessionKey: "agent:main:voice" } }],
+    });
+    expect(resolveVoiceWakeRouteWithMatch({ trigger: "hey bot", config })).toEqual({
+      target: { sessionKey: "agent:main:voice" },
+      matched: true,
+    });
+  });
+
+  it("returns matched: false for empty or undefined trigger", () => {
+    const config = normalizeVoiceWakeRoutingConfig({
+      defaultTarget: { mode: "current" },
+      routes: [{ trigger: "robot", target: { agentId: "main" } }],
+    });
+    expect(resolveVoiceWakeRouteWithMatch({ trigger: undefined, config })).toEqual({
+      target: { mode: "current" },
+      matched: false,
+    });
+    expect(resolveVoiceWakeRouteWithMatch({ trigger: "  ", config })).toEqual({
+      target: { mode: "current" },
+      matched: false,
+    });
   });
 });
 

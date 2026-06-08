@@ -306,7 +306,10 @@ export function isDefaultVoiceWakeRoutingConfig(config: VoiceWakeRoutingConfig):
   );
 }
 
-type VoiceWakeResolvedRoute = { mode: "current" } | { agentId: string } | { sessionKey: string };
+export type VoiceWakeResolvedRoute =
+  | { mode: "current" }
+  | { agentId: string }
+  | { sessionKey: string };
 
 function resolveVoiceWakeRouteTarget(
   routeTarget: VoiceWakeRouteTarget | undefined,
@@ -323,19 +326,30 @@ function resolveVoiceWakeRouteTarget(
   return { mode: "current" };
 }
 
+/**
+ * Resolve the route target for a normalized wake trigger, returning whether a
+ * specific route matched or the defaultTarget was used as fallback.
+ */
+export function resolveVoiceWakeRouteWithMatch(params: {
+  trigger: string | undefined;
+  config: VoiceWakeRoutingConfig;
+}): { target: VoiceWakeResolvedRoute; matched: boolean } {
+  const normalizedTrigger = normalizeOptionalString(params.trigger)
+    ? normalizeVoiceWakeTriggerWord(params.trigger as string)
+    : "";
+  if (normalizedTrigger) {
+    const route = params.config.routes.find((r) => r.trigger === normalizedTrigger);
+    if (route) {
+      return { target: resolveVoiceWakeRouteTarget(route.target), matched: true };
+    }
+  }
+  return { target: resolveVoiceWakeRouteTarget(params.config.defaultTarget), matched: false };
+}
+
 /** Resolve the route target for a normalized wake trigger. */
 export function resolveVoiceWakeRouteByTrigger(params: {
   trigger: string | undefined;
   config: VoiceWakeRoutingConfig;
 }): VoiceWakeResolvedRoute {
-  const normalizedTrigger = normalizeOptionalString(params.trigger)
-    ? normalizeVoiceWakeTriggerWord(params.trigger as string)
-    : "";
-  if (normalizedTrigger) {
-    const matched = params.config.routes.find((route) => route.trigger === normalizedTrigger);
-    if (matched) {
-      return resolveVoiceWakeRouteTarget(matched.target);
-    }
-  }
-  return resolveVoiceWakeRouteTarget(params.config.defaultTarget);
+  return resolveVoiceWakeRouteWithMatch(params).target;
 }

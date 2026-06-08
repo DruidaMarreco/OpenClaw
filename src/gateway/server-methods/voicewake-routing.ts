@@ -5,6 +5,7 @@ import {
   loadVoiceWakeRoutingConfig,
   normalizeVoiceWakeRoutingConfig,
   resetVoiceWakeRoutingConfig,
+  resolveVoiceWakeRouteWithMatch,
   setVoiceWakeRoutingConfig,
   validateVoiceWakeRoutingConfigInput,
 } from "../../infra/voicewake-routing.js";
@@ -15,6 +16,29 @@ export const voicewakeRoutingHandlers: GatewayRequestHandlers = {
   "voicewake.routing.get": async ({ respond }) => {
     try {
       respond(true, { config: await loadVoiceWakeRoutingConfig() });
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
+    }
+  },
+  "voicewake.routing.resolve": async ({ params, respond }) => {
+    if (!params || typeof params.trigger !== "string") {
+      respond(
+        false,
+        undefined,
+        errorShape(
+          ErrorCodes.INVALID_REQUEST,
+          "voicewake.routing.resolve requires trigger: string",
+        ),
+      );
+      return;
+    }
+    try {
+      const config = await loadVoiceWakeRoutingConfig();
+      const { target, matched } = resolveVoiceWakeRouteWithMatch({
+        trigger: params.trigger,
+        config,
+      });
+      respond(true, { target, matched });
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
     }
