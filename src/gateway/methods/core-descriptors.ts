@@ -110,6 +110,7 @@ export const CORE_GATEWAY_METHOD_SPECS: readonly CoreGatewayMethodSpec[] = [
   { name: "artifacts.get", scope: "operator.read" },
   { name: "artifacts.download", scope: "operator.read" },
   { name: "skills.status", scope: "operator.read" },
+
   { name: "skills.search", scope: "operator.read" },
   { name: "skills.detail", scope: "operator.read" },
   { name: "skills.securityVerdicts", scope: "operator.read" },
@@ -137,6 +138,7 @@ export const CORE_GATEWAY_METHOD_SPECS: readonly CoreGatewayMethodSpec[] = [
   { name: "secrets.resolve", scope: "operator.admin" },
   { name: "voicewake.routing.get", scope: "operator.read" },
   { name: "voicewake.routing.set", scope: "operator.write" },
+  { name: "voicewake.routing.status", scope: "operator.read" },
   { name: "sessions.list", scope: "operator.read", startup: true },
   { name: "sessions.subscribe", scope: "operator.read" },
   { name: "sessions.unsubscribe", scope: "operator.read" },

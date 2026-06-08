@@ -31,7 +31,6 @@ Shape:
 
 - `voicewake.get` → `{ triggers: string[] }`
 - `voicewake.set` with params `{ triggers: string[] }` → `{ triggers: string[] }`
-- `voicewake.status` → `{ triggers: string[], updatedAtMs: number, isDefault: boolean }` — current triggers plus metadata; `isDefault` is true when triggers exactly match factory defaults and can be used to show or hide a "Reset to defaults" control
 
 Notes:
 
@@ -42,6 +41,7 @@ Notes:
 
 - `voicewake.routing.get` → `{ config: VoiceWakeRoutingConfig }`
 - `voicewake.routing.set` with params `{ config: VoiceWakeRoutingConfig }` → `{ config: VoiceWakeRoutingConfig }`
+- `voicewake.routing.status` → `{ config: VoiceWakeRoutingConfig, isDefault: boolean }` — current routing config plus metadata; `isDefault` is true when there are no custom routes and the defaultTarget is `{ mode: "current" }`, and can be used to show or hide a "Reset to defaults" control
 
 `VoiceWakeRoutingConfig` shape:
 
