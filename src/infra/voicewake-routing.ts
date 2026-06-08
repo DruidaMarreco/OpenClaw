@@ -29,7 +29,7 @@ export type VoiceWakeRoutingConfig = {
   updatedAtMs: number;
 };
 
-const MAX_VOICEWAKE_ROUTES = 32;
+export const VOICEWAKE_MAX_ROUTES = 32;
 const MAX_VOICEWAKE_TRIGGER_LENGTH = 64;
 
 const DEFAULT_ROUTING: VoiceWakeRoutingConfig = {
@@ -182,10 +182,10 @@ export function validateVoiceWakeRoutingConfigInput(
     return { ok: false, message: "config.routes must be an array" };
   }
   if (Array.isArray(rec.routes)) {
-    if (rec.routes.length > MAX_VOICEWAKE_ROUTES) {
+    if (rec.routes.length > VOICEWAKE_MAX_ROUTES) {
       return {
         ok: false,
-        message: `config.routes must contain at most ${MAX_VOICEWAKE_ROUTES} entries`,
+        message: `config.routes must contain at most ${VOICEWAKE_MAX_ROUTES} entries`,
       };
     }
     const normalizedTriggers = new Map<string, number>();
@@ -292,6 +292,18 @@ export async function resetVoiceWakeRoutingConfig(
   baseDir?: string,
 ): Promise<VoiceWakeRoutingConfig> {
   return setVoiceWakeRoutingConfig({}, baseDir);
+}
+
+/**
+ * Returns true when routing config matches factory defaults: no custom routes and
+ * defaultTarget routes to the current session. Used to drive "Reset to defaults" UI visibility.
+ */
+export function isDefaultVoiceWakeRoutingConfig(config: VoiceWakeRoutingConfig): boolean {
+  return (
+    config.routes.length === 0 &&
+    "mode" in config.defaultTarget &&
+    config.defaultTarget.mode === "current"
+  );
 }
 
 type VoiceWakeResolvedRoute = { mode: "current" } | { agentId: string } | { sessionKey: string };

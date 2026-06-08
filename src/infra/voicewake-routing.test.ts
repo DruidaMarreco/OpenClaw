@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { withTempDir } from "../test-utils/temp-dir.js";
 import {
+  isDefaultVoiceWakeRoutingConfig,
   loadVoiceWakeRoutingConfig,
   normalizeVoiceWakeRoutingConfig,
   normalizeVoiceWakeTriggerWord,
@@ -110,6 +111,29 @@ describe("voicewake routing normalization", () => {
       ok: false,
       message: "config.routes[0].trigger must be at most 64 characters",
     });
+  });
+});
+
+describe("isDefaultVoiceWakeRoutingConfig", () => {
+  it("returns true for factory default config", () => {
+    const config = normalizeVoiceWakeRoutingConfig({});
+    expect(isDefaultVoiceWakeRoutingConfig(config)).toBe(true);
+  });
+
+  it("returns false when custom routes are present", () => {
+    const config = normalizeVoiceWakeRoutingConfig({
+      defaultTarget: { mode: "current" },
+      routes: [{ trigger: "robot", target: { agentId: "main" } }],
+    });
+    expect(isDefaultVoiceWakeRoutingConfig(config)).toBe(false);
+  });
+
+  it("returns false when defaultTarget is non-default", () => {
+    const config = normalizeVoiceWakeRoutingConfig({
+      defaultTarget: { agentId: "main" },
+      routes: [],
+    });
+    expect(isDefaultVoiceWakeRoutingConfig(config)).toBe(false);
   });
 });
 

@@ -42,6 +42,7 @@ Notes:
 
 - `voicewake.routing.get` → `{ config: VoiceWakeRoutingConfig }`
 - `voicewake.routing.set` with params `{ config: VoiceWakeRoutingConfig }` → `{ config: VoiceWakeRoutingConfig }`
+- `voicewake.routing.status` → `{ config: VoiceWakeRoutingConfig, isDefault: boolean }` — current routing config plus metadata; `isDefault` is true when there are no custom routes and the defaultTarget is `{ mode: "current" }`, and can be used to show or hide a "Reset to defaults" control
 - `voicewake.routing.reset` → `{ config: VoiceWakeRoutingConfig }` — clears all custom routes and restores factory defaults (`defaultTarget: { mode: "current" }`, empty routes), then broadcasts `voicewake.routing.changed`
 
 `VoiceWakeRoutingConfig` shape:
