@@ -3,6 +3,7 @@ import { ErrorCodes, errorShape } from "../../../packages/gateway-protocol/src/i
 import {
   loadVoiceWakeRoutingConfig,
   normalizeVoiceWakeRoutingConfig,
+  resetVoiceWakeRoutingConfig,
   setVoiceWakeRoutingConfig,
   validateVoiceWakeRoutingConfigInput,
 } from "../../infra/voicewake-routing.js";
@@ -13,6 +14,15 @@ export const voicewakeRoutingHandlers: GatewayRequestHandlers = {
   "voicewake.routing.get": async ({ respond }) => {
     try {
       respond(true, { config: await loadVoiceWakeRoutingConfig() });
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
+    }
+  },
+  "voicewake.routing.reset": async ({ respond, context }) => {
+    try {
+      const config = await resetVoiceWakeRoutingConfig();
+      context.broadcastVoiceWakeRoutingChanged(config);
+      respond(true, { config });
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
     }

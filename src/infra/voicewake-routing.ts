@@ -29,7 +29,7 @@ export type VoiceWakeRoutingConfig = {
   updatedAtMs: number;
 };
 
-export const VOICEWAKE_MAX_ROUTES = 32;
+const MAX_VOICEWAKE_ROUTES = 32;
 const MAX_VOICEWAKE_TRIGGER_LENGTH = 64;
 
 const DEFAULT_ROUTING: VoiceWakeRoutingConfig = {
@@ -182,10 +182,10 @@ export function validateVoiceWakeRoutingConfigInput(
     return { ok: false, message: "config.routes must be an array" };
   }
   if (Array.isArray(rec.routes)) {
-    if (rec.routes.length > VOICEWAKE_MAX_ROUTES) {
+    if (rec.routes.length > MAX_VOICEWAKE_ROUTES) {
       return {
         ok: false,
-        message: `config.routes must contain at most ${VOICEWAKE_MAX_ROUTES} entries`,
+        message: `config.routes must contain at most ${MAX_VOICEWAKE_ROUTES} entries`,
       };
     }
     const normalizedTriggers = new Map<string, number>();
@@ -285,6 +285,13 @@ export async function setVoiceWakeRoutingConfig(
     await writeJson(filePath, next);
     return next;
   });
+}
+
+/** Reset voice wake routing config to factory defaults (no custom routes, current-session target). */
+export async function resetVoiceWakeRoutingConfig(
+  baseDir?: string,
+): Promise<VoiceWakeRoutingConfig> {
+  return setVoiceWakeRoutingConfig({}, baseDir);
 }
 
 type VoiceWakeResolvedRoute = { mode: "current" } | { agentId: string } | { sessionKey: string };
