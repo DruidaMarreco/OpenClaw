@@ -584,6 +584,33 @@ describe("gateway server models + voicewake", () => {
     });
   });
 
+  test("voicewake.routing.status reflects default and custom states", { timeout: 30_000 }, async () => {
+    await withTempHome(async () => {
+      const defaultStatus = await rpcReq<{
+        config?: { version?: number; defaultTarget?: unknown; routes?: unknown[] };
+        isDefault?: boolean;
+      }>(ws, "voicewake.routing.status");
+      expect(defaultStatus.ok).toBe(true);
+      expect(defaultStatus.payload?.isDefault).toBe(true);
+      expect(defaultStatus.payload?.config?.routes).toStrictEqual([]);
+
+      await rpcReq(ws, "voicewake.routing.set", {
+        config: {
+          defaultTarget: { mode: "current" },
+          routes: [{ trigger: "status test", target: { agentId: "main" } }],
+        },
+      });
+
+      const customStatus = await rpcReq<{
+        config?: { routes?: unknown[] };
+        isDefault?: boolean;
+      }>(ws, "voicewake.routing.status");
+      expect(customStatus.ok).toBe(true);
+      expect(customStatus.payload?.isDefault).toBe(false);
+      expect(customStatus.payload?.config?.routes).toHaveLength(1);
+    });
+  });
+
   test("pushes voicewake.routing.changed to nodes on connect and on updates", async () => {
     await withConnectedNodeEvent("voicewake.routing.changed", async (nodeWs, first) => {
       expect(first.event).toBe("voicewake.routing.changed");
