@@ -1,10 +1,14 @@
 // Covers voice wake routing normalization and validation.
 import { describe, expect, it } from "vitest";
+import { withTempDir } from "../test-utils/temp-dir.js";
 import {
   isDefaultVoiceWakeRoutingConfig,
+  loadVoiceWakeRoutingConfig,
   normalizeVoiceWakeRoutingConfig,
   normalizeVoiceWakeTriggerWord,
+  resetVoiceWakeRoutingConfig,
   resolveVoiceWakeRouteByTrigger,
+  setVoiceWakeRoutingConfig,
   validateVoiceWakeRoutingConfigInput,
 } from "./voicewake-routing.js";
 
@@ -130,5 +134,28 @@ describe("isDefaultVoiceWakeRoutingConfig", () => {
       routes: [],
     });
     expect(isDefaultVoiceWakeRoutingConfig(config)).toBe(false);
+  });
+});
+
+describe("resetVoiceWakeRoutingConfig", () => {
+  it("clears custom routes and restores default target", async () => {
+    await withTempDir("openclaw-routing-reset-", async (baseDir) => {
+      await setVoiceWakeRoutingConfig(
+        {
+          defaultTarget: { agentId: "main" },
+          routes: [{ trigger: "robot", target: { agentId: "main" } }],
+        },
+        baseDir,
+      );
+
+      const reset = await resetVoiceWakeRoutingConfig(baseDir);
+      expect(reset.routes).toStrictEqual([]);
+      expect(reset.defaultTarget).toEqual({ mode: "current" });
+      expect(reset.updatedAtMs).toBeGreaterThan(0);
+
+      const loaded = await loadVoiceWakeRoutingConfig(baseDir);
+      expect(loaded.routes).toStrictEqual([]);
+      expect(loaded.defaultTarget).toEqual({ mode: "current" });
+    });
   });
 });

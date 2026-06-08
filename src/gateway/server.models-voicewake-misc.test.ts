@@ -388,6 +388,32 @@ describe("gateway server models + voicewake", () => {
     },
   );
 
+  test("voicewake.reset restores defaults and broadcasts", { timeout: 20_000 }, async () => {
+    await withTempHome(async () => {
+      await rpcReq(ws, "voicewake.set", { triggers: ["custom", "words"] });
+
+      const changedP = onceMessage<{
+        type: "event";
+        event: string;
+        payload?: Record<string, unknown> | null;
+      }>(ws, (o) => o.type === "event" && o.event === "voicewake.changed");
+
+      const resetRes = await rpcReq<{ triggers?: string[] }>(ws, "voicewake.reset");
+      expect(resetRes.ok).toBe(true);
+      expect(resetRes.payload?.triggers).toEqual(["openclaw", "claude", "computer"]);
+
+      const changed = await changedP;
+      expect(changed.event).toBe("voicewake.changed");
+      expect(
+        (changed.payload as { triggers?: unknown } | undefined)?.triggers,
+      ).toEqual(["openclaw", "claude", "computer"]);
+
+      const after = await rpcReq<{ triggers?: string[] }>(ws, "voicewake.get");
+      expect(after.ok).toBe(true);
+      expect(after.payload?.triggers).toEqual(["openclaw", "claude", "computer"]);
+    });
+  });
+
   test("pushes voicewake.changed to nodes on connect and on updates", async () => {
     await withConnectedNodeEvent("voicewake.changed", async (nodeWs, first) => {
       expect(first.event).toBe("voicewake.changed");
@@ -518,6 +544,43 @@ describe("gateway server models + voicewake", () => {
       expect(stillStored.payload?.config?.routes).toEqual([
         { trigger: "robot wake", target: { agentId: "main" } },
       ]);
+    });
+  });
+
+  test("voicewake.routing.reset clears custom config and broadcasts", { timeout: 30_000 }, async () => {
+    await withTempHome(async () => {
+      await rpcReq(ws, "voicewake.routing.set", {
+        config: {
+          defaultTarget: { agentId: "main" },
+          routes: [{ trigger: "robot", target: { agentId: "main" } }],
+        },
+      });
+
+      const changedP = onceMessage<{
+        type: "event";
+        event: string;
+        payload?: Record<string, unknown> | null;
+      }>(ws, (o) => o.type === "event" && o.event === "voicewake.routing.changed");
+
+      const resetRes = await rpcReq<{
+        config?: { routes?: unknown[]; defaultTarget?: unknown };
+      }>(ws, "voicewake.routing.reset");
+      expect(resetRes.ok).toBe(true);
+      expect(resetRes.payload?.config?.routes).toStrictEqual([]);
+      expect(resetRes.payload?.config?.defaultTarget).toEqual({ mode: "current" });
+
+      const changed = await changedP;
+      expect(changed.event).toBe("voicewake.routing.changed");
+      expect(
+        (changed.payload as { config?: { routes?: unknown[] } } | undefined)?.config?.routes,
+      ).toStrictEqual([]);
+
+      const after = await rpcReq<{
+        config?: { routes?: unknown[]; defaultTarget?: unknown };
+      }>(ws, "voicewake.routing.get");
+      expect(after.ok).toBe(true);
+      expect(after.payload?.config?.routes).toStrictEqual([]);
+      expect(after.payload?.config?.defaultTarget).toEqual({ mode: "current" });
     });
   });
 
