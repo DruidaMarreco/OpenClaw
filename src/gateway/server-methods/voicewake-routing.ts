@@ -4,6 +4,7 @@ import {
   isDefaultVoiceWakeRoutingConfig,
   loadVoiceWakeRoutingConfig,
   normalizeVoiceWakeRoutingConfig,
+  resetVoiceWakeRoutingConfig,
   setVoiceWakeRoutingConfig,
   validateVoiceWakeRoutingConfigInput,
 } from "../../infra/voicewake-routing.js";
@@ -25,6 +26,15 @@ export const voicewakeRoutingHandlers: GatewayRequestHandlers = {
         config,
         isDefault: isDefaultVoiceWakeRoutingConfig(config),
       });
+    } catch (err) {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
+    }
+  },
+  "voicewake.routing.reset": async ({ respond, context }) => {
+    try {
+      const config = await resetVoiceWakeRoutingConfig();
+      context.broadcastVoiceWakeRoutingChanged(config);
+      respond(true, { config });
     } catch (err) {
       respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, String(err)));
     }

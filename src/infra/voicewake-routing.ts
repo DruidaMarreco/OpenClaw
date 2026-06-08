@@ -287,6 +287,13 @@ export async function setVoiceWakeRoutingConfig(
   });
 }
 
+/** Reset voice wake routing config to factory defaults (no custom routes, current-session target). */
+export async function resetVoiceWakeRoutingConfig(
+  baseDir?: string,
+): Promise<VoiceWakeRoutingConfig> {
+  return setVoiceWakeRoutingConfig({}, baseDir);
+}
+
 /**
  * Returns true when routing config matches factory defaults: no custom routes and
  * defaultTarget routes to the current session. Used to drive "Reset to defaults" UI visibility.

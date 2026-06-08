@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { withTempDir } from "../test-utils/temp-dir.js";
 import {
   defaultVoiceWakeTriggers,
-  isDefaultVoiceWakeTriggers,
   loadVoiceWakeConfig,
+  resetVoiceWakeTriggers,
   setVoiceWakeTriggers,
 } from "./voicewake.js";
 
@@ -33,6 +33,18 @@ describe("voicewake config", () => {
     });
   });
 
+  it("resetVoiceWakeTriggers restores defaults and persists them", async () => {
+    await withTempDir("openclaw-voicewake-", async (baseDir) => {
+      await setVoiceWakeTriggers(["custom", "words"], baseDir);
+      const reset = await resetVoiceWakeTriggers(baseDir);
+      expect(reset.triggers).toEqual(defaultVoiceWakeTriggers());
+      expect(reset.updatedAtMs).toBeGreaterThan(0);
+
+      const loaded = await loadVoiceWakeConfig(baseDir);
+      expect(loaded.triggers).toEqual(defaultVoiceWakeTriggers());
+    });
+  });
+
   it("falls back to defaults for empty or malformed persisted values", async () => {
     await withTempDir("openclaw-voicewake-", async (baseDir) => {
       const emptySaved = await setVoiceWakeTriggers(["", "   "], baseDir);
@@ -53,20 +65,5 @@ describe("voicewake config", () => {
         updatedAtMs: 0,
       });
     });
-  });
-
-  it("isDefaultVoiceWakeTriggers returns true for the exact factory defaults", () => {
-    expect(isDefaultVoiceWakeTriggers(defaultVoiceWakeTriggers())).toBe(true);
-  });
-
-  it("isDefaultVoiceWakeTriggers returns false when triggers differ", () => {
-    expect(isDefaultVoiceWakeTriggers(["openclaw"])).toBe(false);
-    expect(isDefaultVoiceWakeTriggers([])).toBe(false);
-    // Same items but reordered.
-    expect(
-      isDefaultVoiceWakeTriggers(
-        [...defaultVoiceWakeTriggers()].reverse(),
-      ),
-    ).toBe(false);
   });
 });
